@@ -41,6 +41,7 @@
 /* Private variables ---------------------------------------------------------*/
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
+DMA_HandleTypeDef hdma_tim1_ch1;
 DMA_HandleTypeDef hdma_tim2_ch1;
 
 UART_HandleTypeDef huart2;
@@ -48,8 +49,12 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 uint32_t InputCaptureBuffer[IC_BUFFER_SIZE];
 float averageRisingedgePeriod;
-uint32_t duty = 500;
-uint32_t MotorSetDuty;
+float MotorReadRPM;
+uint32_t MotorSetDuty = 50;
+uint32_t MotorSetRPM = 15;
+uint32_t MotorControlEnabel = 0;
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -122,11 +127,31 @@ int main(void)
 		 	  {
 		 		  timestamp = HAL_GetTick()+500;
 		 		  averageRisingedgePeriod = IC_Cale_Period();
+		 		 MotorReadRPM = (60/(averageRisingedgePeriod*12*0.000001*64));
 
-		 		  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1,(duty*10));
+		 		  if(MotorControlEnabel == 0)
+		 		  {
+		 			 __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1,(MotorSetDuty*10));
+		 		  }
+		 		  else if(MotorControlEnabel == 1){
+		 			  if(MotorSetRPM > MotorReadRPM){
+		 				  MotorSetDuty += 1;
+		 			  }
+		 			  else if(MotorSetRPM < MotorReadRPM)
+		 			  {
+		 				  MotorSetDuty -= 1;
+		 			  }
+		 			  if(MotorSetDuty >= 100)
+		 			  {
+		 				  MotorSetDuty = 100;
+		 			  }
+		 			  else if(MotorSetDuty <= 0)
+		 			  {
+		 				  MotorSetDuty = 0;
+		 			  }
+		 			 __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1,(MotorSetDuty*10));
+		 		  }
 		 	  }
-
-		 	 duty = MotorSetDuty;
   }
   /* USER CODE END 3 */
 }
@@ -351,11 +376,15 @@ static void MX_DMA_Init(void)
 
   /* DMA controller clock enable */
   __HAL_RCC_DMA1_CLK_ENABLE();
+  __HAL_RCC_DMA2_CLK_ENABLE();
 
   /* DMA interrupt init */
   /* DMA1_Stream5_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream5_IRQn);
+  /* DMA2_Stream1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
 
 }
 
@@ -403,14 +432,14 @@ float IC_Cale_Period()
 	while(i != lastVaildDMAPointer)
 	{
 		uint32_t firstCapture = InputCaptureBuffer[i];
-		uint32_t NextCapture = InputCaptureBuffer[i+1]%IC_BUFFER_SIZE;
+		uint32_t NextCapture = InputCaptureBuffer[(i+1)%IC_BUFFER_SIZE];
 		sumdiff += NextCapture-firstCapture;
 		i = (i+1) % IC_BUFFER_SIZE;
 	}
 	return sumdiff / 5.0;
 
-
 }
+
 
 /* USER CODE END 4 */
 
