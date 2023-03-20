@@ -50,7 +50,7 @@ UART_HandleTypeDef huart2;
 uint32_t InputCaptureBuffer[IC_BUFFER_SIZE];
 float averageRisingedgePeriod;
 float MotorReadRPM;
-uint32_t MotorSetDuty = 50;
+int MotorSetDuty = 50;
 uint32_t MotorSetRPM = 15;
 uint32_t MotorControlEnabel = 0;
 
