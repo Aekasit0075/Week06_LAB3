@@ -49,19 +49,11 @@ UART_HandleTypeDef huart2;
 /* USER CODE BEGIN PV */
 uint32_t InputCaptureBuffer[IC_BUFFER_SIZE];
 float averageRisingedgePeriod;
+float duty = 50;
 float MotorReadRPM;
-int MotorSetDuty = 50;
-int MotorSetRPM = 15;
+float MotorSetDuty;
+uint32_t MotorSetRPM = 15;
 uint32_t MotorControlEnabel = 0;
-
-float Kp = 0.5;
-float Ki = 1;
-float error;
-float P;
-float I;
-float u;
-float integral = 0;
-
 
 
 /* USER CODE END PV */
@@ -75,8 +67,6 @@ static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 float IC_Cale_Period();
-float PI_Control();
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -136,20 +126,37 @@ int main(void)
 	  static uint32_t timestamp = 0;
 		 	  if(HAL_GetTick()>= timestamp)
 		 	  {
-		 		  timestamp = HAL_GetTick()+500;
+		 		  timestamp = HAL_GetTick()+ 500;
 		 		  averageRisingedgePeriod = IC_Cale_Period();
 		 		 MotorReadRPM = (60/(averageRisingedgePeriod*12*0.000001*64));
 
-		 		  if(MotorControlEnabel == 0)
-		 		  {
-		 			 __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1,(MotorSetDuty*10));
-		 		  }
-		 		  else if(MotorControlEnabel == 1){
-		 			 PI_Control();
-		 		  }
-		 		 __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1,(MotorSetDuty*10));
-		 	  }
-  }
+					  if(MotorControlEnabel == 0)
+					  {
+						  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1,(duty*10));
+
+						  duty = MotorSetDuty;
+					  }
+					  else if(MotorControlEnabel == 1){
+						  if(MotorSetRPM > MotorReadRPM){
+							  duty += 1;
+						  }
+						  else if(MotorSetRPM < MotorReadRPM)
+						  {
+							  duty -= 1;
+						  }
+						  if(duty >= 100)
+						  {
+							  duty = 100;
+						  }
+						  else if(duty <= 0)
+						  {
+							  duty = 0;
+						  }
+						 __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1,(duty*10));
+					  }
+				  }
+	}
+
   /* USER CODE END 3 */
 }
 
@@ -434,17 +441,8 @@ float IC_Cale_Period()
 		i = (i+1) % IC_BUFFER_SIZE;
 	}
 	return sumdiff / 5.0;
-}
-float PI_Control()
-{
-	error = MotorSetRPM - MotorReadRPM;
-	P = Kp*error;
-	integral = integral + error*0.001;
-	I = Ki*integral;
-	u = P + I;
 
 }
-
 
 /* USER CODE END 4 */
 
