@@ -51,7 +51,7 @@ uint32_t InputCaptureBuffer[IC_BUFFER_SIZE];
 float averageRisingedgePeriod;
 float duty = 50;
 float MotorReadRPM;
-float MotorSetDuty = 0;
+float MotorSetDuty = 50;
 uint32_t MotorSetRPM = 15;
 uint32_t MotorControlEnabel = 0;
 /* USER CODE END PV */
@@ -123,6 +123,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
+
 	  static uint32_t timestamp = 0;
 		 	  if(HAL_GetTick()>= timestamp)
 		 	  {
@@ -137,11 +139,11 @@ int main(void)
 					  }
 					  else if(MotorControlEnabel == 1){
 						  if(MotorSetRPM > MotorReadRPM){
-							  duty += 1;
+							  duty += 0.5;
 						  }
 						  else if(MotorSetRPM < MotorReadRPM)
 						  {
-							  duty -= 1;
+							  duty -= 0.5;
 						  }
 						  if(duty >= 100)
 						  {
@@ -155,6 +157,8 @@ int main(void)
 					  }
 				  }
 	}
+
+
   /* USER CODE END 3 */
   }
 
