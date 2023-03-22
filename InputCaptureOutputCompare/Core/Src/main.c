@@ -51,7 +51,7 @@ uint32_t InputCaptureBuffer[IC_BUFFER_SIZE];
 float averageRisingedgePeriod;
 float duty = 50;
 float MotorReadRPM;
-float MotorSetDuty;
+float MotorSetDuty = 50;
 uint32_t MotorSetRPM = 15;
 uint32_t MotorControlEnabel = 0;
 
@@ -138,11 +138,11 @@ int main(void)
 					  }
 					  else if(MotorControlEnabel == 1){
 						  if(MotorSetRPM > MotorReadRPM){
-							  duty += 1;
+							  duty += 0.5;
 						  }
 						  else if(MotorSetRPM < MotorReadRPM)
 						  {
-							  duty -= 1;
+							  duty -= 0.5;
 						  }
 						  if(duty >= 100)
 						  {
